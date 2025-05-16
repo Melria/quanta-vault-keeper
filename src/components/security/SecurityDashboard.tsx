@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -121,7 +120,7 @@ const SecurityDashboard: React.FC = () => {
           <CardContent className="space-y-4">
             {mockSecurityAlerts.length > 0 ? (
               mockSecurityAlerts.map(alert => (
-                <Alert key={alert.id} variant="outline" className="flex items-start">
+                <Alert key={alert.id} className="flex items-start">
                   <div className="mr-2 mt-0.5">
                     {getSeverityIcon(alert.severity)}
                   </div>
