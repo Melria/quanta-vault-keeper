@@ -1,4 +1,5 @@
 
+import React from 'react'; // Adding explicit React import
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,39 +28,41 @@ import AppLayout from "./components/layout/AppLayout";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+const App: React.FC = () => (
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Splash />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            {/* Protected routes */}
-            <Route element={
-              <RequireAuth>
-                <AppLayout />
-              </RequireAuth>
-            }>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/vault" element={<Vault />} />
-              <Route path="/generator" element={<Generator />} />
-              <Route path="/security" element={<Security />} />
-              <Route path="/settings" element={<Settings />} />
-            </Route>
-            
-            {/* Fallback route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Splash />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              {/* Protected routes */}
+              <Route element={
+                <RequireAuth>
+                  <AppLayout />
+                </RequireAuth>
+              }>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/vault" element={<Vault />} />
+                <Route path="/generator" element={<Generator />} />
+                <Route path="/security" element={<Security />} />
+                <Route path="/settings" element={<Settings />} />
+              </Route>
+              
+              {/* Fallback route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TooltipProvider>
         </AuthProvider>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+    </QueryClientProvider>
+  </React.StrictMode>
 );
 
 export default App;
