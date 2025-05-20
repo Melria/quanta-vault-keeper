@@ -11,8 +11,7 @@ import {
   LogOut 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavigationProps {
   className?: string;
@@ -20,12 +19,7 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ className }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  
-  const handleLogout = () => {
-    toast.success("Logged out successfully");
-    navigate('/login');
-  };
+  const { signOut, user } = useAuth();
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -80,15 +74,15 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
             <User size={16} />
           </div>
           <div>
-            <p className="text-sm font-medium">User Name</p>
-            <p className="text-xs text-quantablue-light/70">user@example.com</p>
+            <p className="text-sm font-medium">{user?.user_metadata?.full_name || 'User'}</p>
+            <p className="text-xs text-quantablue-light/70">{user?.email}</p>
           </div>
         </div>
         
         <Button
           variant="outline"
           className="w-full border-quantablue-dark text-quantablue-light hover:bg-quantablue-dark hover:text-white"
-          onClick={handleLogout}
+          onClick={() => signOut()}
         >
           <LogOut size={16} className="mr-2" />
           Logout

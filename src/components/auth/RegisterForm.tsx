@@ -8,9 +8,11 @@ import { Eye, EyeOff, Shield } from "lucide-react";
 import { toast } from 'sonner';
 import { calculatePasswordStrength, getSecurityLevel } from '@/lib/passwordUtils';
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from '@/contexts/AuthContext';
 
 const RegisterForm: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -18,6 +20,7 @@ const RegisterForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
+  const { signUp } = useAuth();
   
   const passwordStrength = calculatePasswordStrength(password);
   const securityLevel = getSecurityLevel(passwordStrength);
@@ -42,22 +45,38 @@ const RegisterForm: React.FC = () => {
       return;
     }
     
+    if (!fullName) {
+      toast.error("Please enter your full name");
+      return;
+    }
+    
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      if (email && password) {
-        toast.success("Account created successfully");
-        navigate('/dashboard');
-      } else {
-        toast.error("Please fill all required fields");
-      }
+    try {
+      await signUp(email, password, fullName);
+      // No need to navigate - the auth context will handle it
+    } catch (error) {
+      // Error is already handled in the signUp function
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
   
   return (
     <form onSubmit={handleRegister} className="space-y-6 w-full max-w-md">
+      <div className="space-y-2">
+        <Label htmlFor="fullName">Full Name</Label>
+        <Input
+          id="fullName"
+          type="text"
+          placeholder="John Doe"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          required
+          className="bg-white/10 backdrop-blur-sm border-quantablue-light/20"
+        />
+      </div>
+      
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input

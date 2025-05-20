@@ -3,10 +3,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 
+// Auth Context
+import { AuthProvider } from "./contexts/AuthContext";
+import RequireAuth from "./components/auth/RequireAuth";
+
 // Auth pages
+import Splash from "./pages/Splash";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
@@ -28,24 +33,30 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          
-          {/* Protected routes - would normally include auth guard */}
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/vault" element={<Vault />} />
-            <Route path="/generator" element={<Generator />} />
-            <Route path="/security" element={<Security />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
-          
-          {/* Fallback route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Splash />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            {/* Protected routes */}
+            <Route element={
+              <RequireAuth>
+                <AppLayout />
+              </RequireAuth>
+            }>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/vault" element={<Vault />} />
+              <Route path="/generator" element={<Generator />} />
+              <Route path="/security" element={<Security />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
+            
+            {/* Fallback route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

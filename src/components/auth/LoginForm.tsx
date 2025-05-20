@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, Lock } from "lucide-react";
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -16,21 +17,26 @@ const LoginForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast.error("Please enter both email and password");
+      return;
+    }
+    
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      if (email && password) {
-        toast.success("Login successful");
-        navigate('/dashboard');
-      } else {
-        toast.error("Please enter both email and password");
-      }
+    try {
+      await signIn(email, password);
+      // No need to navigate - the auth context will handle it
+    } catch (error) {
+      // Error is already handled in the signIn function
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
   
   return (
