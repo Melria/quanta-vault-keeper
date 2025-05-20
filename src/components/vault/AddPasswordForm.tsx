@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -12,6 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import { CreatePasswordDto } from '@/types/password';
 import { passwordService } from '@/services/passwordService';
 import { calculatePasswordStrength } from '@/lib/passwordUtils';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
@@ -29,6 +30,9 @@ interface AddPasswordFormProps {
 }
 
 const AddPasswordForm: React.FC<AddPasswordFormProps> = ({ onSuccess, onCancel }) => {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -49,15 +53,34 @@ const AddPasswordForm: React.FC<AddPasswordFormProps> = ({ onSuccess, onCancel }
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to save passwords",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const passwordData: CreatePasswordDto = {
         ...values,
         strength_score: strengthScore,
+        user_id: user.id  // Add the user_id from the auth context
       };
       
       await passwordService.create(passwordData);
+      toast({
+        title: "Success",
+        description: "Password added successfully",
+      });
       onSuccess();
     } catch (error) {
       console.error("Error adding password:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add password",
+        variant: "destructive"
+      });
       // Error handling is done in the service
     }
   };

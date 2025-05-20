@@ -33,6 +33,7 @@ export const passwordService = {
   },
 
   async create(passwordData: CreatePasswordDto): Promise<PasswordEntry> {
+    // Now passwordData includes user_id as required by the database
     const { data, error } = await supabase
       .from('password_entries')
       .insert(passwordData)
