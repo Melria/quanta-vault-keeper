@@ -6,19 +6,27 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { PasswordEntry } from '@/lib/mockData';
+import { PasswordEntry, UpdatePasswordDto } from '@/types/password';
 import { getSecurityLevel } from '@/lib/passwordUtils';
 import { X, Copy, Eye, EyeOff, Edit, Trash, Clock, Globe, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { passwordService } from '@/services/passwordService';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface PasswordDetailProps {
   password: PasswordEntry;
   onClose: () => void;
+  onDelete: () => void;
+  onUpdate: () => void;
 }
 
-const PasswordDetail: React.FC<PasswordDetailProps> = ({ password, onClose }) => {
+const PasswordDetail: React.FC<PasswordDetailProps> = ({ password, onClose, onDelete, onUpdate }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editedPassword, setEditedPassword] = useState({ ...password });
   
   const handleCopy = (text: string, type: string) => {
@@ -36,7 +44,7 @@ const PasswordDetail: React.FC<PasswordDetailProps> = ({ password, onClose }) =>
   };
   
   const getSecurityLevelLabel = () => {
-    const level = getSecurityLevel(password.strengthScore);
+    const level = getSecurityLevel(password.strength_score);
     return {
       high: { label: 'Strong', class: 'bg-green-500' },
       medium: { label: 'Medium', class: 'bg-yellow-500' },
@@ -46,16 +54,50 @@ const PasswordDetail: React.FC<PasswordDetailProps> = ({ password, onClose }) =>
   
   const securityLevel = getSecurityLevelLabel();
   
-  const handleSave = () => {
-    toast.success("Password updated successfully");
-    setEditMode(false);
-    // In a real app, this would update the actual data
+  const handleToggleFavorite = async () => {
+    try {
+      await passwordService.toggleFavorite(password.id, password.favorite);
+      onUpdate();
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast.error("Failed to update favorite status");
+    }
   };
   
-  const handleDelete = () => {
-    toast.success("Password deleted successfully");
-    onClose();
-    // In a real app, this would delete the actual data
+  const handleSave = async () => {
+    try {
+      setIsUpdating(true);
+      
+      const updateData: UpdatePasswordDto = {
+        title: editedPassword.title,
+        username: editedPassword.username,
+        password: editedPassword.password,
+        url: editedPassword.url || null,
+        notes: editedPassword.notes || null,
+        category: editedPassword.category,
+        favorite: editedPassword.favorite,
+      };
+      
+      await passwordService.update(password.id, updateData);
+      setEditMode(false);
+      onUpdate();
+    } catch (error) {
+      toast.error("Failed to update password");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+  
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await passwordService.delete(password.id);
+      onDelete();
+    } catch (error) {
+      toast.error("Failed to delete password");
+    } finally {
+      setIsDeleting(false);
+    }
   };
   
   const renderContent = () => {
@@ -102,6 +144,23 @@ const PasswordDetail: React.FC<PasswordDetailProps> = ({ password, onClose }) =>
             </div>
           </div>
           <div>
+            <Label htmlFor="category">Category</Label>
+            <Select 
+              value={editedPassword.category}
+              onValueChange={(value) => setEditedPassword({...editedPassword, category: value})}
+            >
+              <SelectTrigger id="category" className="mt-1">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="personal">Personal</SelectItem>
+                <SelectItem value="work">Work</SelectItem>
+                <SelectItem value="finance">Finance</SelectItem>
+                <SelectItem value="social">Social</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <Label htmlFor="url">Website URL</Label>
             <Input 
               id="url" 
@@ -120,16 +179,31 @@ const PasswordDetail: React.FC<PasswordDetailProps> = ({ password, onClose }) =>
               rows={3}
             />
           </div>
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="favorite" className="cursor-pointer">Mark as Favorite</Label>
+            <Switch 
+              id="favorite"
+              checked={editedPassword.favorite}
+              onCheckedChange={(checked) => setEditedPassword({...editedPassword, favorite: checked})}
+            />
+          </div>
           <div className="flex space-x-2">
             <Button 
               className="flex-1 bg-quantablue-dark hover:bg-quantablue-medium" 
               onClick={handleSave}
+              disabled={isUpdating}
             >
-              Save Changes
+              {isUpdating ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  Saving...
+                </>
+              ) : "Save Changes"}
             </Button>
             <Button 
               variant="outline" 
               onClick={() => setEditMode(false)}
+              disabled={isUpdating}
             >
               Cancel
             </Button>
@@ -159,7 +233,7 @@ const PasswordDetail: React.FC<PasswordDetailProps> = ({ password, onClose }) =>
           <h3 className="text-sm font-medium text-muted-foreground">Password</h3>
           <div className="flex items-center justify-between mt-1">
             <div className="font-mono">
-              {showPassword ? password.password : '•'.repeat(password.password.length)}
+              {showPassword ? password.password : '•'.repeat(Math.min(password.password.length, 12))}
             </div>
             <div className="flex space-x-2">
               <Button
@@ -188,7 +262,7 @@ const PasswordDetail: React.FC<PasswordDetailProps> = ({ password, onClose }) =>
             <h3 className="text-sm font-medium text-muted-foreground">Website</h3>
             <div className="flex items-center justify-between mt-1">
               <div className="flex items-center">
-                <Globe size={14} className="mr-2" />
+                <Globe size={14} className="mr-2 shrink-0" />
                 <a 
                   href={password.url} 
                   target="_blank" 
@@ -221,7 +295,7 @@ const PasswordDetail: React.FC<PasswordDetailProps> = ({ password, onClose }) =>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center">
               <Clock size={14} className="mr-1" />
-              <span>Last updated: {formatDate(password.lastUpdated)}</span>
+              <span>Last updated: {formatDate(password.last_updated)}</span>
             </div>
             <div className="flex space-x-2">
               <Button
@@ -232,14 +306,39 @@ const PasswordDetail: React.FC<PasswordDetailProps> = ({ password, onClose }) =>
               >
                 <Edit size={16} />
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                onClick={handleDelete}
-              >
-                <Trash size={16} />
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash size={16} />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Password</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this password? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-red-600 text-white hover:bg-red-700 focus:ring-red-600"
+                    >
+                      {isDeleting ? (
+                        <>
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                          Deleting...
+                        </>
+                      ) : "Delete"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>
@@ -254,9 +353,17 @@ const PasswordDetail: React.FC<PasswordDetailProps> = ({ password, onClose }) =>
           <div className="flex items-center space-x-2">
             <CardTitle>
               {password.title}
-              {password.favorite && (
-                <Star size={16} className="inline ml-2" fill="#FFD700" stroke="#FFD700" />
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleFavorite}
+                className="ml-1 h-5 w-5 p-0 rounded-full"
+              >
+                <Star 
+                  size={16} 
+                  className={password.favorite ? "fill-yellow-400 stroke-yellow-400" : "stroke-gray-400"}
+                />
+              </Button>
             </CardTitle>
             <Badge className={securityLevel?.class}>{securityLevel?.label}</Badge>
           </div>

@@ -1,4 +1,3 @@
-
 /**
  * Password utility functions for QuantaVault
  */
@@ -9,30 +8,49 @@
 export const calculatePasswordStrength = (password: string): number => {
   if (!password) return 0;
   
-  let strength = 0;
+  // Initialize score
+  let score = 0;
   
-  // Length
-  strength += Math.min(password.length * 4, 40);
+  // Length check
+  if (password.length >= 12) {
+    score += 30;
+  } else if (password.length >= 8) {
+    score += 20;
+  } else if (password.length >= 6) {
+    score += 10;
+  }
   
-  // Character variety
-  if (/[a-z]/.test(password)) strength += 10; // lowercase
-  if (/[A-Z]/.test(password)) strength += 10; // uppercase
-  if (/\d/.test(password)) strength += 10; // digits
-  if (/[^a-zA-Z0-9]/.test(password)) strength += 15; // special characters
+  // Character variety checks
+  const hasLowercase = /[a-z]/.test(password);
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasNumbers = /[0-9]/.test(password);
+  const hasSpecialChars = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
   
-  // Penalize for common patterns
-  if (/(.)\1{2,}/.test(password)) strength -= 10; // repeated characters
-  if (/^(123|abc|qwerty|password|admin)/i.test(password)) strength -= 20; // common patterns
+  // Add points for character variety
+  if (hasLowercase) score += 10;
+  if (hasUppercase) score += 15;
+  if (hasNumbers) score += 10;
+  if (hasSpecialChars) score += 20;
   
-  return Math.max(0, Math.min(100, strength));
+  // Bonus for mixed character types
+  let typesCount = 0;
+  if (hasLowercase) typesCount++;
+  if (hasUppercase) typesCount++;
+  if (hasNumbers) typesCount++;
+  if (hasSpecialChars) typesCount++;
+  
+  if (typesCount >= 3) score += 15;
+  
+  // Cap score at 100
+  return Math.min(score, 100);
 };
 
 /**
  * Get security level from strength score
  */
-export const getSecurityLevel = (strength: number): 'high' | 'medium' | 'low' => {
-  if (strength >= 80) return 'high';
-  if (strength >= 50) return 'medium';
+export const getSecurityLevel = (strengthScore: number): 'high' | 'medium' | 'low' => {
+  if (strengthScore >= 80) return 'high';
+  if (strengthScore >= 50) return 'medium';
   return 'low';
 };
 
@@ -81,5 +99,5 @@ export const generatePassword = (
  * Mask a password for display
  */
 export const maskPassword = (password: string): string => {
-  return '•'.repeat(password.length);
+  return '•'.repeat(Math.min(password.length, 12));
 };

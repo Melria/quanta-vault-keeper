@@ -1,18 +1,29 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Plus, Star, SortAsc, SortDesc } from 'lucide-react';
 import PasswordCard from './PasswordCard';
-import { PasswordEntry, mockPasswords } from '@/lib/mockData';
+import { PasswordEntry } from '@/types/password';
 import PasswordDetail from './PasswordDetail';
+import { passwordService } from '@/services/passwordService';
+import { useQuery } from '@tanstack/react-query';
+import AddPasswordForm from './AddPasswordForm';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 const PasswordList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedPasswordId, setSelectedPasswordId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  
+  const { data: passwords = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ['passwords'],
+    queryFn: passwordService.getAll,
+  });
   
   const handleViewPassword = (id: string) => {
     setSelectedPasswordId(id);
@@ -24,6 +35,23 @@ const PasswordList: React.FC = () => {
   
   const toggleSortDirection = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+  
+  const handlePasswordAdded = async () => {
+    toast.success('Password added successfully');
+    setAddDialogOpen(false);
+    await refetch();
+  };
+  
+  const handlePasswordDeleted = async () => {
+    toast.success('Password deleted successfully');
+    setSelectedPasswordId(null);
+    await refetch();
+  };
+  
+  const handlePasswordUpdated = async () => {
+    toast.success('Password updated successfully');
+    await refetch();
   };
   
   const filterPasswords = (passwords: PasswordEntry[]) => {
@@ -53,10 +81,28 @@ const PasswordList: React.FC = () => {
     });
   };
   
-  const filteredPasswords = filterPasswords(mockPasswords);
+  const filteredPasswords = passwords ? filterPasswords(passwords) : [];
   const selectedPassword = selectedPasswordId 
-    ? mockPasswords.find(p => p.id === selectedPasswordId) 
+    ? passwords.find(p => p.id === selectedPasswordId) 
     : null;
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-quantablue-dark"></div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center p-8">
+        <h2 className="text-xl font-semibold mb-2">Error loading passwords</h2>
+        <p className="text-muted-foreground mb-4">There was a problem loading your passwords.</p>
+        <Button onClick={() => refetch()}>Try Again</Button>
+      </div>
+    );
+  }
   
   return (
     <div className="h-full flex flex-col md:flex-row">
@@ -79,10 +125,17 @@ const PasswordList: React.FC = () => {
           >
             {sortDirection === 'asc' ? <SortAsc size={18} /> : <SortDesc size={18} />}
           </Button>
-          <Button className="shrink-0 bg-quantablue-dark hover:bg-quantablue-medium">
-            <Plus size={18} className="mr-1" />
-            New
-          </Button>
+          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="shrink-0 bg-quantablue-dark hover:bg-quantablue-medium">
+                <Plus size={18} className="mr-1" />
+                New
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <AddPasswordForm onSuccess={handlePasswordAdded} onCancel={() => setAddDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
         </div>
         
         <Tabs 
@@ -128,7 +181,12 @@ const PasswordList: React.FC = () => {
       
       {selectedPassword && (
         <div className="flex-1 md:pl-4 mt-4 md:mt-0">
-          <PasswordDetail password={selectedPassword} onClose={handleCloseDetail} />
+          <PasswordDetail 
+            password={selectedPassword} 
+            onClose={handleCloseDetail} 
+            onDelete={handlePasswordDeleted}
+            onUpdate={handlePasswordUpdated}
+          />
         </div>
       )}
     </div>

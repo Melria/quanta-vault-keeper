@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Eye, Copy, Star } from 'lucide-react';
-import { PasswordEntry } from '@/lib/mockData';
+import { PasswordEntry } from '@/types/password';
 import { maskPassword } from '@/lib/passwordUtils';
 import { toast } from 'sonner';
 
@@ -13,7 +13,7 @@ interface PasswordCardProps {
 }
 
 const PasswordCard: React.FC<PasswordCardProps> = ({ password, onView }) => {
-  const getIconForUrl = (url?: string) => {
+  const getIconForUrl = (url?: string | null) => {
     if (!url) return null;
     
     try {
@@ -24,19 +24,23 @@ const PasswordCard: React.FC<PasswordCardProps> = ({ password, onView }) => {
     }
   };
   
-  const handleCopy = (text: string, type: 'username' | 'password') => {
+  const handleCopy = (event: React.MouseEvent, text: string, type: 'username' | 'password') => {
+    event.stopPropagation();
     navigator.clipboard.writeText(text);
     toast.success(`${type === 'username' ? 'Username' : 'Password'} copied to clipboard`);
   };
   
   const getSecurityColor = () => {
-    if (password.strengthScore >= 80) return 'bg-green-500';
-    if (password.strengthScore >= 50) return 'bg-yellow-500';
+    if (password.strength_score >= 80) return 'bg-green-500';
+    if (password.strength_score >= 50) return 'bg-yellow-500';
     return 'bg-red-500';
   };
   
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card 
+      className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => onView(password.id)}
+    >
       <CardContent className="p-0">
         <div className="flex items-center p-4">
           <div className="relative h-10 w-10 rounded-md flex items-center justify-center bg-quantablue-dark/10 mr-3 overflow-hidden">
@@ -74,7 +78,7 @@ const PasswordCard: React.FC<PasswordCardProps> = ({ password, onView }) => {
               variant="ghost" 
               size="sm" 
               className="h-7 w-7 p-0"
-              onClick={() => handleCopy(password.username, 'username')}
+              onClick={(e) => handleCopy(e, password.username, 'username')}
               title="Copy username"
             >
               <Copy size={14} />
@@ -83,7 +87,10 @@ const PasswordCard: React.FC<PasswordCardProps> = ({ password, onView }) => {
               variant="ghost" 
               size="sm" 
               className="h-7 w-7 p-0"
-              onClick={() => onView(password.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(password.id);
+              }}
               title="View details"
             >
               <Eye size={14} />
