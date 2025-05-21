@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -62,10 +63,17 @@ const AddPasswordForm: React.FC<AddPasswordFormProps> = ({ onSuccess, onCancel }
         return;
       }
 
+      // Explicitly create the DTO with all required fields spelled out
       const passwordData: CreatePasswordDto = {
-        ...values,
-        strength_score: strengthScore,
-        user_id: user.id  // Add the user_id from the auth context
+        title: values.title,         // Required field
+        username: values.username,    // Required field
+        password: values.password,    // Required field
+        category: values.category,    // Required field
+        strength_score: strengthScore, // Required field
+        user_id: user.id,            // Required field
+        url: values.url,             // Optional field
+        notes: values.notes,         // Optional field
+        favorite: values.favorite,    // Optional field
       };
       
       await passwordService.create(passwordData);
@@ -81,7 +89,6 @@ const AddPasswordForm: React.FC<AddPasswordFormProps> = ({ onSuccess, onCancel }
         description: "Failed to add password",
         variant: "destructive"
       });
-      // Error handling is done in the service
     }
   };
 

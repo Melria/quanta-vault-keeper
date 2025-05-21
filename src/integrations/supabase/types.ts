@@ -83,7 +83,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_password: {
+        Args: { user_id: number; title: string; password: string }
+        Returns: undefined
+      }
+      authenticate_user: {
+        Args: { email: string; password: string }
+        Returns: boolean
+      }
+      delete_password: {
+        Args: Record<PropertyKey, never> | { id: number; user_id: number }
+        Returns: undefined
+      }
+      get_passwords: {
+        Args: { user_id: number }
+        Returns: {
+          id: number
+          title: string
+          password: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      register_user: {
+        Args: { email: string; password: string }
+        Returns: undefined
+      }
+      update_password: {
+        Args: { id: number; user_id: number; title: string; password: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

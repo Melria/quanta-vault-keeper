@@ -23,7 +23,7 @@ export interface CreatePasswordDto {
   category: string;
   favorite?: boolean;
   strength_score: number;
-  user_id: string; // Added user_id as required field
+  user_id: string;
 }
 
 export interface UpdatePasswordDto {
