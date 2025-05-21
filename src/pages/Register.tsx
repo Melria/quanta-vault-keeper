@@ -19,7 +19,7 @@ const Register: React.FC = () => {
         <Card className="bg-white/10 backdrop-blur-sm border-white/20">
           <CardHeader>
             <CardTitle className="text-white">Create an Account</CardTitle>
-            <CardDescription className="text-quantablue-light/80">
+            <CardDescription className="text-gray-300">
               Set up your password vault in minutes
             </CardDescription>
           </CardHeader>

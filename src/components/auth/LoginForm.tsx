@@ -42,7 +42,7 @@ const LoginForm: React.FC = () => {
   return (
     <form onSubmit={handleLogin} className="space-y-6 w-full max-w-md">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" className="text-white">Email</Label>
         <Input
           id="email"
           type="email"
@@ -50,12 +50,12 @@ const LoginForm: React.FC = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="bg-white/10 backdrop-blur-sm border-quantablue-light/20"
+          className="bg-white/10 backdrop-blur-sm border-quantablue-light/20 text-white placeholder:text-gray-300"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="password">Master Password</Label>
+        <Label htmlFor="password" className="text-white">Master Password</Label>
         <div className="relative">
           <Input
             id="password"
@@ -64,13 +64,13 @@ const LoginForm: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="bg-white/10 backdrop-blur-sm border-quantablue-light/20 pr-10"
+            className="bg-white/10 backdrop-blur-sm border-quantablue-light/20 pr-10 text-white placeholder:text-gray-300"
           />
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-white"
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -85,14 +85,14 @@ const LoginForm: React.FC = () => {
             checked={rememberMe}
             onCheckedChange={(checked) => setRememberMe(!!checked)}
           />
-          <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
+          <Label htmlFor="remember" className="text-sm font-normal cursor-pointer text-white">
             Remember me
           </Label>
         </div>
         
         <Button 
           variant="link" 
-          className="p-0 h-auto text-sm text-quantablue-medium hover:text-quantablue-light"
+          className="p-0 h-auto text-sm text-quantablue-lightest hover:text-white"
           onClick={() => navigate('/forgot-password')}
           type="button"
         >
@@ -119,10 +119,10 @@ const LoginForm: React.FC = () => {
       </Button>
       
       <div className="text-center text-sm">
-        <span className="text-muted-foreground">Don't have an account?</span>{' '}
+        <span className="text-gray-300">Don't have an account?</span>{' '}
         <Button 
           variant="link" 
-          className="p-0 h-auto text-sm text-quantablue-medium hover:text-quantablue-light"
+          className="p-0 h-auto text-sm text-quantablue-lightest hover:text-white"
           onClick={() => navigate('/register')}
           type="button"
         >
