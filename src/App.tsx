@@ -15,6 +15,8 @@ import RequireAuth from "./components/auth/RequireAuth";
 import Splash from "./pages/Splash";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // App pages
 import Dashboard from "./pages/Dashboard";
@@ -41,6 +43,8 @@ const App: React.FC = () => (
               <Route path="/" element={<Splash />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               
               {/* Protected routes */}
               <Route element={

@@ -12,6 +12,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,6 +35,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           navigate('/dashboard');
         } else if (event === 'SIGNED_OUT') {
           navigate('/login');
+        } else if (event === 'PASSWORD_RECOVERY') {
+          navigate('/reset-password');
         }
       }
     );
@@ -95,6 +99,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset password email");
+      throw error;
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ 
+        password: password 
+      });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update password");
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -104,6 +134,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signUp,
         signIn,
         signOut,
+        resetPassword,
+        updatePassword,
       }}
     >
       {children}
