@@ -10,20 +10,41 @@ import PasswordDetail from './PasswordDetail';
 import { passwordService } from '@/services/passwordService';
 import { useQuery } from '@tanstack/react-query';
 import AddPasswordForm from './AddPasswordForm';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
-const PasswordList: React.FC = () => {
+interface PasswordListProps {
+  addPasswordDialogOpen?: boolean;
+  setAddPasswordDialogOpen?: (open: boolean) => void;
+  selectedPasswordId?: string | null;
+  setSelectedPasswordId?: (id: string | null) => void;
+}
+
+const PasswordList: React.FC<PasswordListProps> = ({ 
+  addPasswordDialogOpen = false, 
+  setAddPasswordDialogOpen = () => {}, 
+  selectedPasswordId = null,
+  setSelectedPasswordId = () => {}
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [selectedPasswordId, setSelectedPasswordId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
   
   const { data: passwords = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['passwords'],
     queryFn: passwordService.getAll,
   });
+  
+  useEffect(() => {
+    if (selectedPasswordId) {
+      const password = passwords.find(p => p.id === selectedPasswordId);
+      if (!password && passwords.length > 0 && !isLoading) {
+        // If the selected password is not found, reset selection
+        setSelectedPasswordId(null);
+        toast.error("The selected password was not found");
+      }
+    }
+  }, [selectedPasswordId, passwords, isLoading, setSelectedPasswordId]);
   
   const handleViewPassword = (id: string) => {
     setSelectedPasswordId(id);
@@ -39,7 +60,7 @@ const PasswordList: React.FC = () => {
   
   const handlePasswordAdded = async () => {
     toast.success('Password added successfully');
-    setAddDialogOpen(false);
+    setAddPasswordDialogOpen(false);
     await refetch();
   };
   
@@ -125,15 +146,16 @@ const PasswordList: React.FC = () => {
           >
             {sortDirection === 'asc' ? <SortAsc size={18} /> : <SortDesc size={18} />}
           </Button>
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="shrink-0 bg-quantablue-dark hover:bg-quantablue-medium">
-                <Plus size={18} className="mr-1" />
-                New
-              </Button>
-            </DialogTrigger>
+          <Dialog open={addPasswordDialogOpen} onOpenChange={setAddPasswordDialogOpen}>
+            <Button 
+              className="shrink-0 bg-quantablue-dark hover:bg-quantablue-medium"
+              onClick={() => setAddPasswordDialogOpen(true)}
+            >
+              <Plus size={18} className="mr-1" />
+              New
+            </Button>
             <DialogContent className="max-w-md">
-              <AddPasswordForm onSuccess={handlePasswordAdded} onCancel={() => setAddDialogOpen(false)} />
+              <AddPasswordForm onSuccess={handlePasswordAdded} onCancel={() => setAddPasswordDialogOpen(false)} />
             </DialogContent>
           </Dialog>
         </div>
@@ -175,6 +197,13 @@ const PasswordList: React.FC = () => {
                 ? `No results for "${searchTerm}"`
                 : "There are no passwords in this category yet."}
             </p>
+            <Button 
+              onClick={() => setAddPasswordDialogOpen(true)} 
+              className="mt-4 bg-quantablue-dark hover:bg-quantablue-medium"
+            >
+              <Plus size={16} className="mr-1" />
+              Add Password
+            </Button>
           </div>
         )}
       </div>
