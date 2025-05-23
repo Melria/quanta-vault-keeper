@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import PasswordFormFields from './PasswordFormFields';
 import { passwordFormSchema, PasswordFormValues, defaultValues } from './passwordFormSchema';
+import { Plus } from 'lucide-react';
 
 interface AddPasswordFormProps {
   onSuccess: () => void;
@@ -98,7 +99,12 @@ const AddPasswordForm: React.FC<AddPasswordFormProps> = ({ onSuccess, onCancel }
                   <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                   Saving...
                 </>
-              ) : "Save Password"}
+              ) : (
+                <>
+                  <Plus size={18} className="mr-1" /> 
+                  Add Password
+                </>
+              )}
             </Button>
           </div>
         </form>
