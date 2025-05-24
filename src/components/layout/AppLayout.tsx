@@ -11,10 +11,10 @@ const AppLayout: React.FC = () => {
   const isMobile = useIsMobile();
   
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-quantablue-lightest">
+    <div className="min-h-screen flex flex-col md:flex-row bg-quantablue-lightest safe-area-top">
       {isMobile ? (
         <>
-          <header className="bg-quantablue-darkest text-white p-4 flex items-center justify-between">
+          <header className="bg-quantablue-darkest text-white p-4 flex items-center justify-between sticky top-0 z-50">
             <div className="flex items-center space-x-2">
               <div className="bg-quantablue-medium h-8 w-8 rounded-full flex items-center justify-center">
                 <Lock size={16} />
@@ -34,7 +34,7 @@ const AppLayout: React.FC = () => {
             </Sheet>
           </header>
           
-          <main className="flex-1 p-4">
+          <main className="flex-1 p-4 pb-20 overflow-y-auto">
             <Outlet />
           </main>
         </>
