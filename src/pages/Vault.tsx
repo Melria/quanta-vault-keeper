@@ -22,10 +22,12 @@ const Vault: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [addPasswordDialogOpen, setAddPasswordDialogOpen] = useState(false);
+  const [selectedPasswordId, setSelectedPasswordId] = useState<string | null>(null);
 
   const { data: passwords = [], isLoading, error, refetch } = useQuery({
     queryKey: ['passwords', user?.id],
-    queryFn: () => passwordService.getAll(user!.id),
+    queryFn: () => passwordService.getAll(),
     enabled: !!user,
   });
 
@@ -168,10 +170,10 @@ const Vault: React.FC = () => {
               </div>
 
               <PasswordList
-                passwords={filteredPasswords}
-                isLoading={isLoading}
-                onUpdate={refetch}
-                selectedCategory={selectedCategory}
+                addPasswordDialogOpen={addPasswordDialogOpen}
+                setAddPasswordDialogOpen={setAddPasswordDialogOpen}
+                selectedPasswordId={selectedPasswordId}
+                setSelectedPasswordId={setSelectedPasswordId}
               />
             </div>
           )}
