@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,11 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertTriangle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { calculatePasswordStrength, getSecurityLevel } from '@/lib/passwordUtils';
 import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
+import TwoFactorSetup from '@/components/settings/TwoFactorSetup';
 
 // Mock function to save settings to localStorage
 const saveSettings = (key: string, value: any) => {
@@ -29,15 +30,16 @@ const loadSettings = (key: string, defaultValue: any) => {
 
 const Settings: React.FC = () => {
   const { user, signOut, updatePassword } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   
   // General Settings
   const [autoLockTime, setAutoLockTime] = useState<string>('5');
   const [biometricEnabled, setBiometricEnabled] = useState<boolean>(true);
-  const [darkMode, setDarkMode] = useState<boolean>(false);
   const [clipboardClearTime, setClipboardClearTime] = useState<string>('30');
   const [twoFAEnabled, setTwoFAEnabled] = useState<boolean>(false);
   const [language, setLanguage] = useState<string>('en');
+  const [show2FASetup, setShow2FASetup] = useState<boolean>(false);
   
   // Password Change Dialog
   const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState<boolean>(false);
@@ -58,7 +60,6 @@ const Settings: React.FC = () => {
   useEffect(() => {
     setAutoLockTime(loadSettings('autoLockTime', '5'));
     setBiometricEnabled(loadSettings('biometricEnabled', true));
-    setDarkMode(loadSettings('darkMode', false));
     setClipboardClearTime(loadSettings('clipboardClearTime', '30'));
     setTwoFAEnabled(loadSettings('twoFAEnabled', false));
     setLanguage(loadSettings('language', 'en'));
@@ -74,13 +75,32 @@ const Settings: React.FC = () => {
     if (securityLevel === 'medium') return 'bg-yellow-500';
     return 'bg-red-500';
   };
+
+  const handleDarkModeToggle = (checked: boolean) => {
+    setTheme(checked ? 'dark' : 'light');
+    saveSettings('darkMode', checked);
+  };
+
+  const handle2FAToggle = (checked: boolean) => {
+    if (checked && !twoFAEnabled) {
+      setShow2FASetup(true);
+    } else if (!checked && twoFAEnabled) {
+      setTwoFAEnabled(false);
+      saveSettings('twoFAEnabled', false);
+      toast.success('Two-factor authentication disabled');
+    }
+  };
+
+  const handle2FAEnable = () => {
+    setTwoFAEnabled(true);
+    saveSettings('twoFAEnabled', true);
+  };
   
   const handleSaveSettings = async () => {
     try {
       // Save all settings to localStorage
       await saveSettings('autoLockTime', autoLockTime);
       await saveSettings('biometricEnabled', biometricEnabled);
-      await saveSettings('darkMode', darkMode);
       await saveSettings('clipboardClearTime', clipboardClearTime);
       await saveSettings('twoFAEnabled', twoFAEnabled);
       await saveSettings('language', language);
@@ -96,10 +116,10 @@ const Settings: React.FC = () => {
     // Reset state variables to defaults
     setAutoLockTime('5');
     setBiometricEnabled(true);
-    setDarkMode(false);
     setClipboardClearTime('30');
     setTwoFAEnabled(false);
     setLanguage('en');
+    setTheme('light');
     
     // Reset localStorage settings
     localStorage.removeItem('settings_autoLockTime');
@@ -211,8 +231,8 @@ const Settings: React.FC = () => {
                     </p>
                   </div>
                   <Switch
-                    checked={darkMode}
-                    onCheckedChange={setDarkMode}
+                    checked={theme === 'dark'}
+                    onCheckedChange={handleDarkModeToggle}
                   />
                 </div>
                 
@@ -312,7 +332,7 @@ const Settings: React.FC = () => {
                   </div>
                   <Switch
                     checked={twoFAEnabled}
-                    onCheckedChange={setTwoFAEnabled}
+                    onCheckedChange={handle2FAToggle}
                   />
                 </div>
                 
@@ -627,6 +647,12 @@ const Settings: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TwoFactorSetup
+        open={show2FASetup}
+        onOpenChange={setShow2FASetup}
+        onEnable={handle2FAEnable}
+      />
     </div>
   );
 };
