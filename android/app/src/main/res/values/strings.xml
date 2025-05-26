@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">quanta-vault-keeper</string>
+    <string name="title_activity_main">quanta-vault-keeper</string>
+    <string name="package_name">app.lovable.ca25320dd8f4442d8fad2b45e839f57a</string>
+    <string name="custom_url_scheme">app.lovable.ca25320dd8f4442d8fad2b45e839f57a</string>
+</resources>
