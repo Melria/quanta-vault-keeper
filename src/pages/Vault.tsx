@@ -15,6 +15,8 @@ import { PasswordEntry } from '@/types/password';
 import { Search, Plus, Download, Upload, Shield, Star, Globe, Mail, CreditCard, Wifi } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+
+
 const Vault: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -99,14 +101,14 @@ const Vault: React.FC = () => {
             onClick={() => setShowImportDialog(true)}
             className="flex items-center gap-2"
           >
-            <Upload size={18} />
+            <Upload size={100} />
             Import Passwords
           </Button>
           <Button 
             onClick={() => setShowAddForm(true)}
             className="bg-quantablue-dark hover:bg-quantablue-medium flex items-center gap-2"
           >
-            <Plus size={18} />
+            <Plus size={100} />
             Add Password
           </Button>
         </div>

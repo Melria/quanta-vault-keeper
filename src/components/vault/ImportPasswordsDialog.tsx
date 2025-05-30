@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,9 @@ import { Upload, FileText, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { passwordService } from '@/services/passwordService';
 import { calculatePasswordStrength } from '@/lib/passwordUtils';
+
+import { Filesystem } from '@capacitor/filesystem';
+import { FilePicker } from '@capawesome/capacitor-file-picker';
 
 interface ImportPasswordsDialogProps {
   open: boolean;
@@ -53,13 +55,11 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
 
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-      
       let parsed: ParsedPassword | null = null;
 
       switch (format) {
         case 'google':
         case 'chrome':
-          // Format: name,url,username,password,note
           if (values.length >= 4) {
             parsed = {
               title: values[0] || values[1] || 'Imported Password',
@@ -70,9 +70,7 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
             };
           }
           break;
-        
         case 'firefox':
-          // Format: url,username,password,httpRealm,formActionOrigin,guid,timeCreated,timeLastUsed,timePasswordChanged
           if (values.length >= 3) {
             parsed = {
               title: values[0] || 'Firefox Password',
@@ -82,9 +80,7 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
             };
           }
           break;
-        
         case 'lastpass':
-          // Format: url,username,password,extra,name,grouping,fav
           if (values.length >= 5) {
             parsed = {
               title: values[4] || values[0] || 'LastPass Password',
@@ -95,9 +91,7 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
             };
           }
           break;
-        
         case 'bitwarden':
-          // Format: folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp
           if (values.length >= 10) {
             parsed = {
               title: values[3] || 'Bitwarden Password',
@@ -108,9 +102,7 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
             };
           }
           break;
-        
-        default:
-          // Generic CSV - try to map common column names
+        default: {
           const titleIndex = headers.findIndex(h => h.includes('name') || h.includes('title') || h.includes('site'));
           const urlIndex = headers.findIndex(h => h.includes('url') || h.includes('website') || h.includes('site'));
           const usernameIndex = headers.findIndex(h => h.includes('username') || h.includes('email') || h.includes('login'));
@@ -127,6 +119,7 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
             };
           }
           break;
+        }
       }
 
       if (parsed && parsed.password) {
@@ -136,6 +129,40 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
 
     return data;
   };
+
+  async function requestStoragePermission(): Promise<boolean> {
+    const check = await Filesystem.checkPermissions();
+    if (check.publicStorage === 'granted') return true;
+    const request = await Filesystem.requestPermissions();
+    return request.publicStorage === 'granted';
+  }
+
+  async function openNativeFilePicker() {
+    try {
+      const result = await FilePicker.pickFiles({
+        types: ['application/csv', 'text/csv'],
+      });
+
+      if (result.files && result.files.length > 0) {
+        const file = result.files[0];
+        const blob = await fetch(file.path!).then(res => res.blob());
+        const text = await blob.text();
+        const parsed = parseCSV(text, importType);
+
+        if (parsed.length === 0) {
+          toast.error('No valid passwords found in the file');
+          return;
+        }
+
+        setPreviewData(parsed);
+        setShowPreview(true);
+        toast.success(`Found ${parsed.length} passwords to import`);
+      }
+    } catch (err) {
+      console.error('File picking failed:', err);
+      toast.error('Could not pick file.');
+    }
+  }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -156,15 +183,19 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
       return;
     }
 
+    const allowed = await requestStoragePermission();
+    if (!allowed) {
+      toast.error("Permission denied. Please allow file access.");
+      return;
+    }
+
     try {
       const text = await file.text();
       const parsed = parseCSV(text, importType);
-      
       if (parsed.length === 0) {
         toast.error('No valid passwords found in the file');
         return;
       }
-
       setPreviewData(parsed);
       setShowPreview(true);
       toast.success(`Found ${parsed.length} passwords to import`);
@@ -188,7 +219,6 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
       for (const passwordData of previewData) {
         try {
           const strengthScore = calculatePasswordStrength(passwordData.password);
-          
           await passwordService.create({
             title: passwordData.title,
             username: passwordData.username,
@@ -200,7 +230,6 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
             strength_score: strengthScore,
             user_id: user.id,
           });
-          
           imported++;
         } catch (error) {
           console.error('Error importing password:', error);
@@ -237,6 +266,8 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
     resetDialog();
   };
 
+  const isMobileApp = () => typeof window !== 'undefined' && !!window.Capacitor && window.Capacitor.isNativePlatform?.();
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -246,7 +277,7 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
             Import passwords from other password managers using CSV files
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6 py-4">
           <div className="space-y-4">
             <div className="space-y-2">
@@ -264,25 +295,31 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="csv-file">CSV File</Label>
-              <Input
-                id="csv-file"
-                type="file"
-                accept=".csv"
-                onChange={handleFileChange}
-                className="cursor-pointer"
-              />
+              {isMobileApp() ? (
+                <Button onClick={openNativeFilePicker} className="w-full">
+                  Pick CSV File (Mobile)
+                </Button>
+              ) : (
+                <Input
+                  id="csv-file"
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleFileChange}
+                  className="cursor-pointer"
+                />
+              )}
               <p className="text-xs text-muted-foreground">
                 Select a CSV file exported from your password manager
               </p>
             </div>
-            
-            {file && importType && (
-              <Button 
-                onClick={handlePreview} 
-                variant="outline" 
+
+            {file && importType && !isMobileApp() && (
+              <Button
+                onClick={handlePreview}
+                variant="outline"
                 className="w-full"
               >
                 <FileText size={16} className="mr-2" />
@@ -290,7 +327,7 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
               </Button>
             )}
           </div>
-          
+
           {showPreview && previewData.length > 0 && (
             <Card>
               <CardHeader>
@@ -318,7 +355,7 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
               </CardContent>
             </Card>
           )}
-          
+
           <div className="bg-amber-50 p-4 rounded-md">
             <div className="flex">
               <AlertCircle className="text-amber-500 h-5 w-5 mr-2 flex-shrink-0" />
@@ -334,14 +371,14 @@ const ImportPasswordsDialog: React.FC<ImportPasswordsDialogProps> = ({ open, onO
             </div>
           </div>
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
           {showPreview && (
-            <Button 
-              onClick={handleImport} 
+            <Button
+              onClick={handleImport}
               disabled={importing || previewData.length === 0}
               className="bg-quantablue-dark hover:bg-quantablue-medium"
             >

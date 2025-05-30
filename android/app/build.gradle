@@ -22,6 +22,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    tasks.configureEach { task ->
+        if (task.name == "extractDeepLinksDebug") {
+            task.dependsOn("generateDebugResValues")
+        }
+    }
 }
 
 repositories {
@@ -40,7 +45,9 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+    implementation project(':capawesome-capacitor-file-picker')
 }
+
 
 apply from: 'capacitor.build.gradle'
 
